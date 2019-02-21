@@ -11,6 +11,7 @@ import logging
 import time
 
 required_config_fields = ['accessKey', 'dreamhostUrl', 'ipUrl', 'dynamicUrl']
+optional_config_fields = ['logfile']
 config = {}
 
 def read_config(config_file):
@@ -67,6 +68,15 @@ def main():
         sys.exit(2)
     read_config(config_file)
 
+    if 'logfile' in config:
+        logfile = config['logfile']
+    else:
+        logfile = ''
+
+    logging.basicConfig(filename=logfile, filemode='a', level=logging.INFO, format='%(message)s')
+    logging.info('** Starting {} on {} **'.format(os.path.basename(sys.argv[0]), time.asctime()))
+    logging.info('Using config file {}'.format(config_file))
+
     print(config)
 
     ip = get_ip()
@@ -79,6 +89,7 @@ def main():
     else:
         print("Need to update DNS, IP has changed")
         update_ip(old_ip, ip)
+    logging.info('** Ending {} on {} **'.format(os.path.basename(sys.argv[0]), time.asctime()))
 
 
 if __name__ == "__main__":
