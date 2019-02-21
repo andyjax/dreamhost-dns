@@ -79,7 +79,7 @@ def main():
     logging.info('Using config file {}'.format(config_file))
 
     ip = get_ip()
-#    print("Current IP: {}".format(ip))
+    logging.info("Current IP: {}".format(ip))
     old_ip = get_dns_ip()
 #    print("Current DNS: {}".format(old_ip))
 
