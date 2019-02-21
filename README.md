@@ -14,3 +14,5 @@ Requires `credential.json` with the following information:
     "dynamicUrl": "url-to-update"
 }
 ```
+
+Run the script with `python dyndns.py credential.json`
