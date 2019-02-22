@@ -11,6 +11,7 @@ import logging
 import time
 
 required_config_fields = ['accessKey', 'dreamhostUrl', 'ipUrl', 'dynamicUrl']
+optional_config_fields = ['logfile']
 config = {}
 
 def read_config(config_file):
@@ -44,18 +45,19 @@ def get_dns_ip():
     for dns_record in dns['data']:
         if dns_record['record'] == config['dynamicUrl'] and dns_record['type'] == 'A':
             ip = dns_record['value']
+            logging.info('Found record for {} with IP {}'.format(config['dynamicUrl'], ip))
     return ip
 
 
 def update_ip(old_ip, new_ip):
     resp = send_dreamhost_command('dns-remove_record', record=config['dynamicUrl'], type='A', value=old_ip)
     if resp['result'] == 'error':
-        print("Failed to remove old record. Error: {}".format(resp['data']))
+        logging.error('Failed to remove old record. Error: {}'.format(resp['data']))
     resp = send_dreamhost_command('dns-add_record', record=config['dynamicUrl'], type='A', value=new_ip)
     if resp['result'] == 'error':
-        print("Failed to add record for {} with IP {}".format(config['dynamicUrl'], new_ip))
+        logging.error('Failed to add record for {} with IP {}'.format(config['dynamicUrl'], new_ip))
     else:
-        print("Changed IP for {} from {} to {}".format(config['dynamicUrl'], old_ip, new_ip))
+        logging.info('Changed IP for {} from {} to {}'.format(config['dynamicUrl'], old_ip, new_ip))
 
 
 def main():
@@ -63,22 +65,30 @@ def main():
     if len(sys.argv) == 2:
         config_file = sys.argv[1]
     else:
-        print("Credential file 'credential.json' not present")
+        print("Usage: python dyndns.py credential.json")
         sys.exit(2)
     read_config(config_file)
 
-    print(config)
+    if 'logfile' in config:
+        logfile = config['logfile']
+    else:
+        logfile = ''
+
+    logging.basicConfig(filename=logfile, filemode='a', level=logging.INFO, format='%(message)s')
+    logging.info('** Starting {} on {} **'.format(os.path.basename(sys.argv[0]), time.asctime()))
+    logging.info('Using config file {}'.format(config_file))
 
     ip = get_ip()
-    print("Current IP: {}".format(ip))
+    logging.info("Current IP: {}".format(ip))
     old_ip = get_dns_ip()
-    print("Current DNS: {}".format(old_ip))
+#    print("Current DNS: {}".format(old_ip))
 
     if ip == old_ip:
-        print("No change to DNS needed")
+        logging.info("IP address has not changed. No change to DNS needed.")
     else:
-        print("Need to update DNS, IP has changed")
+#        print("Need to update DNS, IP has changed")
         update_ip(old_ip, ip)
+    logging.info('** Ending {} on {} **'.format(os.path.basename(sys.argv[0]), time.asctime()))
 
 
 if __name__ == "__main__":
